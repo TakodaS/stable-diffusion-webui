@@ -46,6 +46,7 @@
       overlay = workspace.mkPyprojectOverlay {
         sourcePreference = "wheel";
       };
+      package-name = "stable-diffusion-webui";
 
       editableOverlay = workspace.mkEditablePyprojectOverlay {
         root = "$REPO_ROOT";
@@ -66,8 +67,8 @@
           # An overlay of build fixups & test additions
           pyprojectOverrides = final: prev: {
 
-            # django-webapp is the name of our example package
-            django-webapp = prev.django-webapp.overrideAttrs (old: {
+            # ${package-name} is the name of our example package
+            ${package-name} = prev.${package-name}.overrideAttrs (old: {
 
               # Add tests to passthru.tests
               #
@@ -80,13 +81,13 @@
                     # Run mypy checks
                     mypy =
                       let
-                        venv = final.mkVirtualEnv "django-webapp-typing-env" {
-                          django-webapp = [ "typing" ];
+                        venv = final.mkVirtualEnv "${package-name}-typing-env" {
+                          ${package-name} = [ "typing" ];
                         };
                       in
                       stdenv.mkDerivation {
-                        name = "${final.django-webapp.name}-mypy";
-                        inherit (final.django-webapp) src;
+                        name = "${final.${package-name}.name}-mypy";
+                        inherit (final.${package-name}) src;
                         nativeBuildInputs = [
                           venv
                         ];
@@ -101,13 +102,13 @@
                     # Run pytest with coverage reports installed into build output
                     pytest =
                       let
-                        venv = final.mkVirtualEnv "django-webapp-pytest-env" {
-                          django-webapp = [ "test" ];
+                        venv = final.mkVirtualEnv "${package-name}-pytest-env" {
+                          ${package-name} = [ "test" ];
                         };
                       in
                       stdenv.mkDerivation {
-                        name = "${final.django-webapp.name}-pytest";
-                        inherit (final.django-webapp) src;
+                        name = "${final.${package-name}.name}-pytest";
+                        inherit (final.${package-name}) src;
                         nativeBuildInputs = [
                           venv
                         ];
@@ -132,21 +133,21 @@
                     # NixOS module test
                     nixos =
                       let
-                        venv = final.mkVirtualEnv "django-webapp-nixos-test-env" {
-                          django-webapp = [ ];
+                        venv = final.mkVirtualEnv "${package-name}-nixos-test-env" {
+                          ${package-name} = [ ];
                         };
                       in
                       pkgs.nixosTest {
-                        name = "django-webapp-nixos-test";
+                        name = "${package-name}-nixos-test";
 
                         nodes.machine =
                           { ... }:
                           {
                             imports = [
-                              self.nixosModules.django-webapp
+                              self.nixosModules.${package-name}
                             ];
 
-                            services.django-webapp = {
+                            services.${package-name} = {
                               enable = true;
                               inherit venv;
                             };
@@ -155,7 +156,7 @@
                           };
 
                         testScript = ''
-                          machine.wait_for_unit("django-webapp.service")
+                          machine.wait_for_unit("${package-name}.service")
 
                           with subtest("Web interface getting ready"):
                               machine.wait_until_succeeds("curl -fs localhost:8000")
@@ -187,12 +188,12 @@
 
           pythonSet = pythonSets.${system};
 
-          venv = pythonSet.mkVirtualEnv "django-webapp-env" workspace.deps.default;
+          venv = pythonSet.mkVirtualEnv "${package-name}-env" workspace.deps.default;
 
         in
         stdenv.mkDerivation {
-          name = "django-webapp-static";
-          inherit (pythonSet.django-webapp) src;
+          name = "${package-name}-static";
+          inherit (pythonSet.${package-name}) src;
 
           dontConfigure = true;
           dontBuild = true;
@@ -215,11 +216,11 @@
           pythonSet = pythonSets.${system};
         in
         # Inherit tests from passthru.tests into flake checks
-        pythonSet.django-webapp.passthru.tests
+        pythonSet.${package-name}.passthru.tests
       );
 
       nixosModules = {
-        django-webapp =
+        ${package-name} =
           {
             config,
             lib,
@@ -228,7 +229,7 @@
           }:
 
           let
-            cfg = config.services.django-webapp;
+            cfg = config.services.${package-name};
             inherit (pkgs) system;
 
             pythonSet = pythonSets.${system};
@@ -237,12 +238,12 @@
             inherit (lib.modules) mkIf;
           in
           {
-            options.services.django-webapp = {
+            options.services.${package-name} = {
               enable = mkOption {
                 type = lib.types.bool;
                 default = false;
                 description = ''
-                  Enable django-webapp
+                  Enable ${package-name}
                 '';
               };
 
@@ -256,9 +257,9 @@
 
               venv = mkOption {
                 type = lib.types.package;
-                default = pythonSet.mkVirtualEnv "django-webapp-env" workspace.deps.default;
+                default = pythonSet.mkVirtualEnv "${package-name}-env" workspace.deps.default;
                 description = ''
-                  Django-webapp virtual environment package
+                  ${package-name} virtual environment package
                 '';
               };
 
@@ -266,13 +267,13 @@
                 type = lib.types.package;
                 default = staticRoots.${system};
                 description = ''
-                  Django-webapp static root
+                  ${package-name} static root
                 '';
               };
             };
 
             config = mkIf cfg.enable {
-              systemd.services.django-webapp = {
+              systemd.services.${package-name} = {
                 description = "Django Webapp server";
 
                 environment.DJANGO_STATIC_ROOT = cfg.static-root;
@@ -284,8 +285,8 @@
                   Restart = "on-failure";
 
                   DynamicUser = true;
-                  StateDirectory = "django-webapp";
-                  RuntimeDirectory = "django-webapp";
+                  StateDirectory = "${package-name}";
+                  RuntimeDirectory = "${package-name}";
 
                   BindReadOnlyPaths = [
                     "${
@@ -317,10 +318,10 @@
           # Expose Docker container in packages
           docker =
             let
-              venv = pythonSet.mkVirtualEnv "django-webapp-env" workspace.deps.default;
+              venv = pythonSet.mkVirtualEnv "${package-name}-env" workspace.deps.default;
             in
             pkgs.dockerTools.buildLayeredImage {
-              name = "django-webapp";
+              name = "${package-name}";
               contents = [ pkgs.cacert ];
               config = {
                 Cmd = [
@@ -347,15 +348,8 @@
               editableOverlay
 
               (final: prev: {
-                django-webapp = prev.django-webapp.overrideAttrs (old: {
-                  src = lib.fileset.toSource {
-                    root = old.src;
-                    fileset = lib.fileset.unions [
-                      (old.src + "/pyproject.toml")
-                      (old.src + "/README.md")
-                      (old.src + "/src/django_webapp/__init__.py")
-                    ];
-                  };
+                ${package-name} = prev.${package-name}.overrideAttrs (old: {
+                  src = lib.cleanSource ./.;
                   nativeBuildInputs =
                     old.nativeBuildInputs
                     ++ final.resolveBuildSystem {
@@ -366,8 +360,8 @@
             ]
           );
 
-          venv = editablePythonSet.mkVirtualEnv "django-webapp-dev-env" {
-            django-webapp = [ "dev" ];
+          venv = editablePythonSet.mkVirtualEnv "${package-name}-dev-env" {
+            ${package-name} = [ "dev" ];
           };
         in
         {
@@ -379,6 +373,20 @@
             env = {
               UV_NO_SYNC = "1";
               UV_PYTHON = "${venv}/bin/python";
+              UV_PYTHON_DOWNLOADS = "never";
+            };
+            shellHook = ''
+              unset PYTHONPATH
+              export REPO_ROOT=$(git rev-parse --show-toplevel)
+            '';
+          };
+          init = pkgs.mkShell {
+            packages = [
+              pkgs.uv
+              pkgs.python312
+            ];
+            env = {
+              UV_NO_SYNC = "1";
               UV_PYTHON_DOWNLOADS = "never";
             };
             shellHook = ''
