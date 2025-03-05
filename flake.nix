@@ -21,6 +21,10 @@
       inputs.uv2nix.follows = "uv2nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    uv2nix_hammer_overrides = {
+      url = "github:TyberiusPrime/uv2nix_hammer_overrides";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -30,6 +34,7 @@
       uv2nix,
       pyproject-nix,
       pyproject-build-systems,
+      uv2nix_hammer_overrides,
       ...
     }:
     let
@@ -56,7 +61,10 @@
       pythonSets = forAllSystems (
         system:
         let
-          pkgs = nixpkgs.legacyPackages.${system};
+          pkgs = import nixpkgs {
+            system = "x86_64-linux";
+            config.allowUnfree = true;
+          };
           inherit (pkgs) stdenv;
 
           # Base Python package set from pyproject.nix
@@ -67,6 +75,20 @@
           # An overlay of build fixups & test additions
           pyprojectOverrides = final: prev: {
 
+            # torch = prev.torch.overrideAttrs (old: {
+            #   buildInputs = (old.buildInputs) ++ [
+            #     pkgs.cudaPackages.cuda_cupti
+            #     pkgs.cudaPackages.cuda_nvrtc
+            #     pkgs.cudaPackages.cuda_nvtx
+            #     pkgs.cudaPackages.cudnn
+            #     pkgs.cudaPackages.libcublas
+            #     pkgs.cudaPackages.libcufft
+            #     pkgs.cudaPackages.libcurand
+            #     pkgs.cudaPackages.libcusolver
+            #     pkgs.cudaPackages.libcusparse
+            #     pkgs.cudaPackages.nccl
+            #   ];
+            # });
             # ${package-name} is the name of our example package
             ${package-name} = prev.${package-name}.overrideAttrs (old: {
 
@@ -174,6 +196,7 @@
           lib.composeManyExtensions [
             pyproject-build-systems.overlays.default
             overlay
+            (uv2nix_hammer_overrides.overrides pkgs)
             pyprojectOverrides
           ]
         )
