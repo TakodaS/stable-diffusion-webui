@@ -32,9 +32,6 @@
       self,
       nixpkgs,
       uv2nix,
-      pyproject-nix,
-      pyproject-build-systems,
-      uv2nix_hammer_overrides,
       ...
     }:
     let

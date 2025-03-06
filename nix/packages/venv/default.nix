@@ -165,6 +165,12 @@ let
         pyprojectOverrides
       ]
     );
-  pythonSet = pythonSets;
+  envs = lib.attrsets.genAttrs workspace.deps.all.stable-diffusion-webui (
+    name: pythonSets.mkVirtualEnv "${package-name}-${name}-env" { ${package-name} = [ name ]; }
+  );
 in
-pythonSet.mkVirtualEnv "${package-name}-env" workspace.deps.default
+(pythonSets.mkVirtualEnv "${package-name}-env" workspace.deps.default).overrideAttrs (
+  self: super: {
+    passthru = envs;
+  }
+)

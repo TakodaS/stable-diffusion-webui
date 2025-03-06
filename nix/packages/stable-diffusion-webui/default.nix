@@ -1,6 +1,5 @@
 {
   package-name,
-  lib,
   pkgs,
   system,
   self,
