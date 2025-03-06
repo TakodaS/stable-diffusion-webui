@@ -59,7 +59,6 @@ pkgs.srcOnly rec {
 
   # Empty derivation, nothing to build
   srcs = lib.attrsets.attrValues depsOut;
-  installPhase = "mkdir -p $out";
 
   # Attach other derivations or values
   passthru = depsOut;

@@ -1,7 +1,6 @@
 args@{ lib, pkgs, ... }:
 let
-  dirContents = builtins.readDir ./.; # Reads the current directory
-  folders = builtins.attrNames (lib.attrsets.filterAttrs (_: type: type == "directory") dirContents);
+  folders = lib.flake.getSubdirs ./.;
   folderAttrs = (
     name: {
       name = name;
