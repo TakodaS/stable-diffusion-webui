@@ -1,5 +1,6 @@
 {
   package-name,
+  lib,
   pkgs,
   system,
   self,
@@ -12,7 +13,7 @@ let
 in
 stdenv.mkDerivation {
   name = "${package-name}-static";
-  inherit (pythonSet.${package-name}) src;
+  src = lib.cleanSource "${self}";
 
   dontConfigure = true;
   dontBuild = true;

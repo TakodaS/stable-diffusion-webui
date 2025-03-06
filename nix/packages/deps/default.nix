@@ -34,27 +34,33 @@ let
       hash = "sha256-0IO+3M/Gy4VrNBFYYgZB2CzWhT3PTGBXNKPad61px5k=";
     };
   };
+  depsOut = lib.attrsets.mapAttrs (
+    name: value:
+
+    pkgs.srcOnly {
+      inherit name;
+      src = pkgs.fetchFromGitHub {
+        inherit (value)
+          owner
+          repo
+          rev
+          hash
+          ;
+      };
+
+    }
+  ) deps;
 in
-# pkgs.srcOnly {
-#   name = "foo";
-#   src = lib.fetchFromGitHub {
-#     inherit (deps.blip) owner repo hash;
-#   };
-# }
 
-lib.attrsets.mapAttrs (
-  name: value:
+pkgs.srcOnly rec {
+  pname = "deps";
+  version = "1.0";
+  sourceRoot = ".";
 
-  pkgs.srcOnly {
-    inherit name;
-    src = pkgs.fetchFromGitHub {
-      inherit (value)
-        owner
-        repo
-        rev
-        hash
-        ;
-    };
+  # Empty derivation, nothing to build
+  srcs = lib.attrsets.attrValues depsOut;
+  installPhase = "mkdir -p $out";
 
-  }
-) deps
+  # Attach other derivations or values
+  passthru = depsOut;
+}
