@@ -3,6 +3,7 @@ args@{
   pkgs,
   self,
   system,
+  package-name,
   ...
 }:
 let
@@ -16,5 +17,5 @@ let
 in
 builtins.listToAttrs (map folderAttrs folders)
 // {
-  default = self.packages.${system}.stable-diffusion-webui;
+  default = self.packages.${system}.${package-name};
 }

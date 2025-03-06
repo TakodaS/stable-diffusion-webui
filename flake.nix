@@ -75,7 +75,7 @@
               };
             in
 
-            (import ./nix/packages (
+            (import ./nix/${name} (
               {
                 inherit
                   lib
