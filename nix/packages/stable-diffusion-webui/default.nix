@@ -1,8 +1,9 @@
-{
+args@{
   package-name,
   lib,
   pkgs,
   system,
+  pythonSet,
   self,
   ...
 }:
@@ -10,6 +11,7 @@ let
   inherit (pkgs) stdenv stdenvNoCC;
   inherit (self.packages.${system}) venv;
   src = lib.cleanSource "${self}";
+  # Run mypy checks
   mypy =
     let
       venv = self.packages.${system}.venv.typing;
@@ -90,66 +92,45 @@ let
 
   testAttrs = {
     inherit
-      # mypy
-      # pytest
+      mypy
+      pytest
       nixos
       ;
   };
-  tests = pkgs.srcOnly {
-    name = "tests";
-    stdenv = stdenvNoCC;
-    srcs = builtins.attrValues testAttrs;
-    sourceRoot = ".";
+  tests = pkgs.symlinkJoin rec {
+    name = "test";
+    paths = builtins.attrValues passthru;
     passthru = testAttrs;
   };
 in
-stdenv.mkDerivation rec {
-  name = "${package-name}-static";
-  inherit src;
+pythonSet.${package-name}.overrideAttrs (old: {
 
-  dontConfigure = true;
+  # Add tests to passthru.tests
+  #
+  # These attribute are used in Flake checks.
+  passthru = old.passthru // {
+    tests = (old.tests or { }) // tests;
+    static = import ./static args;
 
-  nativeBuildInputs = with pkgs; [
-    venv
-    makeWrapper
-    git
-  ];
-  passthru = { inherit tests; };
-
-  buildPhase =
-
-    let
-      getDeps = lib.attrsets.foldlAttrs (
-        acc: name: value:
-        acc + "ln -s ${value} repositories/${name} \n"
-      ) "" self.packages.${system}.deps.passthru;
-      dbg = builtins.trace "getDeps: ${getDeps}" getDeps;
-    in
-    ''
-      mkdir repositories
-      ${dbg}
-    '';
+  };
+  nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.makeWrapper ];
   installPhase =
     let
-      script = pkgs.writeShellScriptBin "${name}" ''
-        python launch.py --skip-prepare-environment "$@"
+      script = pkgs.writeShellScriptBin "${old.pname}" ''
+        python ${src}/launch.py --skip-prepare-environment "$@"
       '';
     in
     ''
-      # env DJANGO_STATIC_ROOT="$out" python manage.py collectstatic
       mkdir -p $out/bin
       cp -r ${script}/bin/* $out/bin/
     '';
   postFixup = ''
-    wrapProgram $out/bin/${name} \
+    wrapProgram $out/bin/${old.pname} \
       --set PATH ${
-        lib.makeBinPath (
-          with pkgs;
-          [
-            venv
-            git
-          ]
-        )
+        lib.makeBinPath [
+          venv
+        ]
       }
   '';
-}
+
+})

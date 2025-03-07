@@ -7,7 +7,10 @@
 }:
 let
   system = "x86_64-linux";
-  pkgs = import nixpkgs { inherit system; };
+  pkgs = import nixpkgs {
+    inherit system;
+    config.allowUnfree = true;
+  };
   config = self.nixosModules.options;
 in
 {
@@ -46,7 +49,7 @@ in
 
         static-root = mkOption {
           type = lib.types.package;
-          default = self.packages.${system}.${package-name};
+          default = self.packages.${system}.${package-name}.static;
           description = ''
             ${package-name} static root
           '';
@@ -60,9 +63,7 @@ in
           environment.DJANGO_STATIC_ROOT = cfg.static-root;
 
           serviceConfig = {
-            ExecStart = ''
-              ${cfg.venv}/bin/python ${cfg.static-root}/launch.py --skip-environment-setup
-            '';
+            ExecStart = ''${cfg.venv}/bin/daphne django_webapp.asgi:application'';
             Restart = "on-failure";
 
             DynamicUser = true;

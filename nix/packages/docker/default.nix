@@ -1,14 +1,13 @@
 {
-  package-name,
   lib,
   pkgs,
   system,
+  package-name,
   self,
   ...
 }:
 let
   venv = self.packages.${system}.venv;
-  package-name = venv.name;
 in
 lib.optionalAttrs pkgs.stdenv.isLinux
   # Expose Docker container in packages
@@ -21,8 +20,8 @@ lib.optionalAttrs pkgs.stdenv.isLinux
         "${venv}/bin/python"
       ];
       Env = [
-        # "DJANGO_SETTINGS_MODULE=${settingsModules.prod}"
-        # "DJANGO_STATIC_ROOT=${staticRoots.${system}}"
+        "DJANGO_SETTINGS_MODULE=${self.settingsModules.prod}"
+        "DJANGO_STATIC_ROOT=${self.packages.${system}.${package-name}.static}"
       ];
     };
   }

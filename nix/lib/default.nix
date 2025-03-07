@@ -1,4 +1,7 @@
-{ lib, ... }:
+{
+  lib,
+  ...
+}:
 {
   forAllSystems = lib.genAttrs lib.systems.flakeExposed;
   getSubdirs =
@@ -8,4 +11,5 @@
       folders = builtins.attrNames (lib.attrsets.filterAttrs (_: type: type == "directory") dirContents);
     in
     folders;
+
 }

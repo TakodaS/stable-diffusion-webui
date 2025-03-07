@@ -18,15 +18,8 @@ pkgs.mkShell {
     UV_PYTHON = "${venv}/bin/python";
     UV_PYTHON_DOWNLOADS = "never";
   };
-  shellHook =
-    let
-      getModels = lib.attrsets.foldlAttrs (
-        acc: name: value:
-        acc + "mkdir -p ./repositories/${name} && cp -r ${value}/* ./repositories/${name} \n"
-      ) "" self.packages.${system}.deps;
-    in
-    ''
-      unset PYTHONPATH
-      export REPO_ROOT=$(git rev-parse --show-toplevel)
-    '';
+  shellHook = ''
+    unset PYTHONPATH
+    export REPO_ROOT=$(git rev-parse --show-toplevel)
+  '';
 }

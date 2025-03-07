@@ -2,6 +2,7 @@ args@{
   lib,
   self,
   package-name,
+  pythonSets,
   nixpkgs,
   ...
 }:
@@ -12,6 +13,7 @@ lib.flake.forAllSystems (
       inherit system;
       config.allowUnfree = true;
     };
+    pythonSet = pythonSets.${system};
     folders = lib.flake.getSubdirs ./.;
     folderAttrs = (
       name: {
@@ -19,7 +21,7 @@ lib.flake.forAllSystems (
         value = import ./${name} (
           args
           // {
-            inherit pkgs system;
+            inherit pkgs system pythonSet;
           }
         ); # You can replace this with any value
       }
