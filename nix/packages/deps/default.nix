@@ -52,7 +52,7 @@ let
   ) deps;
 in
 
-pkgs.srcOnly rec {
+pkgs.srcOnly {
   pname = "deps";
   version = "1.0";
   sourceRoot = ".";

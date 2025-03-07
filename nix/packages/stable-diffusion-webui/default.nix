@@ -108,18 +108,31 @@ stdenv.mkDerivation rec {
   inherit src;
 
   dontConfigure = true;
-  dontBuild = true;
 
-  nativeBuildInputs = [
+  nativeBuildInputs = with pkgs; [
     venv
-    pkgs.makeWrapper
+    makeWrapper
+    git
   ];
   passthru = { inherit tests; };
 
+  buildPhase =
+
+    let
+      getDeps = lib.attrsets.foldlAttrs (
+        acc: name: value:
+        acc + "ln -s ${value} repositories/${name} \n"
+      ) "" self.packages.${system}.deps.passthru;
+      dbg = builtins.trace "getDeps: ${getDeps}" getDeps;
+    in
+    ''
+      mkdir repositories
+      ${dbg}
+    '';
   installPhase =
     let
       script = pkgs.writeShellScriptBin "${name}" ''
-        python ${src}/launch.py --skip-prepare-environment "$@"
+        python launch.py --skip-prepare-environment "$@"
       '';
     in
     ''
@@ -130,9 +143,13 @@ stdenv.mkDerivation rec {
   postFixup = ''
     wrapProgram $out/bin/${name} \
       --set PATH ${
-        lib.makeBinPath [
-          venv
-        ]
+        lib.makeBinPath (
+          with pkgs;
+          [
+            venv
+            git
+          ]
+        )
       }
   '';
 }
