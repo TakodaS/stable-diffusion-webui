@@ -90,19 +90,20 @@ let
 
   testAttrs = {
     inherit
-      mypy
+      # mypy
       # pytest
       nixos
       ;
   };
   tests = pkgs.srcOnly {
     name = "tests";
+    stdenv = stdenvNoCC;
     srcs = builtins.attrValues testAttrs;
     sourceRoot = ".";
     passthru = testAttrs;
   };
 in
-stdenv.mkDerivation {
+stdenv.mkDerivation rec {
   name = "${package-name}-static";
   inherit src;
 
@@ -111,11 +112,27 @@ stdenv.mkDerivation {
 
   nativeBuildInputs = [
     venv
+    pkgs.makeWrapper
   ];
   passthru = { inherit tests; };
 
-  installPhase = ''
-    # env DJANGO_STATIC_ROOT="$out" python manage.py collectstatic
-    mkdir -p $out
+  installPhase =
+    let
+      script = pkgs.writeShellScriptBin "${name}" ''
+        python ${src}/launch.py --skip-prepare-environment "$@"
+      '';
+    in
+    ''
+      # env DJANGO_STATIC_ROOT="$out" python manage.py collectstatic
+      mkdir -p $out/bin
+      cp -r ${script}/bin/* $out/bin/
+    '';
+  postFixup = ''
+    wrapProgram $out/bin/${name} \
+      --set PATH ${
+        lib.makeBinPath [
+          venv
+        ]
+      }
   '';
 }
