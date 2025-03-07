@@ -1,20 +1,32 @@
 args@{
   lib,
-  pkgs,
   self,
-  system,
+  package-name,
+  nixpkgs,
   ...
 }:
-let
-  folders = lib.flake.getSubdirs ./.;
-  folderAttrs = (
-    name: {
-      name = name;
-      value = import ./${name} args; # You can replace this with any value
-    }
-  );
-in
-builtins.listToAttrs (map folderAttrs folders)
-// {
-  default = self.packages.${system}.stable-diffusion-webui;
-}
+lib.flake.forAllSystems (
+  system:
+  let
+    pkgs = import nixpkgs {
+      inherit system;
+      config.allowUnfree = true;
+    };
+    folders = lib.flake.getSubdirs ./.;
+    folderAttrs = (
+      name: {
+        name = name;
+        value = import ./${name} (
+          args
+          // {
+            inherit pkgs system;
+          }
+        ); # You can replace this with any value
+      }
+    );
+  in
+  builtins.listToAttrs (map folderAttrs folders)
+  // {
+    default = self.packages.${system}.${package-name};
+  }
+)

@@ -66,27 +66,19 @@
       importFolder = (
         name: {
           name = name;
-          value = forAllSystems (
-            system:
-            let
-              pkgs = import nixpkgs {
-                inherit system;
-                config.allowUnfree = true;
-              };
-            in
+          value =
 
-            (import ./nix/${name} (
-              {
-                inherit
-                  lib
-                  pkgs
-                  system
-                  package-name
-                  ;
-              }
-              // inputs
-            ))
-          );
+            (
+              import ./nix/${name} (
+                {
+                  inherit
+                    lib
+                    package-name
+                    ;
+                }
+                // inputs
+              )
+            );
         }
       );
     in

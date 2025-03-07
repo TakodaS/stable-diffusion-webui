@@ -1,0 +1,9 @@
+{
+  pkgs,
+  lib,
+  self,
+  system,
+  package-name,
+  ...
+}:
+package-name.passthru.tests
