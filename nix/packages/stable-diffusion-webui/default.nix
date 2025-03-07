@@ -7,12 +7,12 @@
   ...
 }:
 let
-  inherit (pkgs) stdenv;
+  inherit (pkgs) stdenv stdenvNoCC;
   inherit (self.packages.${system}) venv;
   src = lib.cleanSource "${self}";
   mypy =
     let
-      venv = self.packages.${system}.venv.test;
+      venv = self.packages.${system}.venv.typing;
     in
     stdenv.mkDerivation {
       name = "${package-name}-test-mypy";
@@ -88,22 +88,18 @@ let
         '';
       };
 
-  testList = [
-    mypy
-    pytest
-    # nixos
-  ];
+  testAttrs = {
+    inherit
+      mypy
+      # pytest
+      nixos
+      ;
+  };
   tests = pkgs.srcOnly {
     name = "tests";
-    srcs = testList;
+    srcs = builtins.attrValues testAttrs;
     sourceRoot = ".";
-    passthru = builtins.listToAttrs (
-      map (v: {
-        name = v.name;
-        value = v;
-      }) testList
-    );
-
+    passthru = testAttrs;
   };
 in
 stdenv.mkDerivation {
@@ -120,5 +116,6 @@ stdenv.mkDerivation {
 
   installPhase = ''
     # env DJANGO_STATIC_ROOT="$out" python manage.py collectstatic
+    mkdir -p $out
   '';
 }
