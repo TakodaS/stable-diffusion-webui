@@ -86,14 +86,6 @@
 }
 #       {
 #
-#         # checks = forAllSystems (
-#         #   system:
-#         #   let
-#         #     pythonSet = pythonSets.${system};
-#         #   in
-#         #   # Inherit tests from passthru.tests into flake checks
-#         #   pythonSet.${package-name}.passthru.tests
-#         # );
 #
 #         # nixosModules = {
 #         #   ${package-name} =

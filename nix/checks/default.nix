@@ -1,9 +1,7 @@
 {
-  pkgs,
   lib,
   self,
-  system,
   package-name,
   ...
 }:
-package-name.passthru.tests
+lib.flake.forAllSystems (system: self.packages.${system}.${package-name}.passthru)
