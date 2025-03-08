@@ -26,7 +26,7 @@ pkgs.stdenv.mkDerivation rec {
 
   installPhase =
     let
-      repoDir = "$out/src";
+      repoDir = "$out/";
       getDeps = lib.attrsets.foldlAttrs (
         acc: name: value:
         acc + "ln -s ${value} ${repoDir}/repositories/${name} \n"
@@ -35,23 +35,25 @@ pkgs.stdenv.mkDerivation rec {
       script = pkgs.writeShellScriptBin "${name}" ''
           echo FOOBAR
           ls
-        ${venv}/bin/python launch.py --skip-prepare-environment "$@"
+          pwd
+        ${venv}/bin/python launch.py --skip-prepare-environment --skip-install "$@"
       '';
     in
     ''
       mkdir -p ${repoDir}/repositories
-      cp -r $src/* $out/src/
-      ${dbg}
-      cd ${repoDir} && ${lib.getExe script}
-
+      mkdir -p $out/bin
+      cp -r $src/* ${repoDir}
+      ${getDeps}
+      cp ${lib.getExe script} $out/bin
     '';
-  # postFixup = ''
-  #   wrapProgram $out/bin/${name} \
-  #     --set PATH ${
-  #       lib.makeBinPath [
-  #         venv
-  #         pkgs.coreutils
-  #       ]
-  #     }
-  # '';
+  postFixup = ''
+    wrapProgram $out/bin/${name} \
+      --set PATH ${
+        lib.makeBinPath [
+          venv
+          pkgs.coreutils
+          pkgs.git
+        ]
+      }
+  '';
 }
