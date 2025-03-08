@@ -20,8 +20,6 @@ lib.optionalAttrs pkgs.stdenv.isLinux
         "${venv}/bin/python"
       ];
       Env = [
-        "DJANGO_SETTINGS_MODULE=${self.settingsModules.prod}"
-        "DJANGO_STATIC_ROOT=${self.packages.${system}.${package-name}.static}"
       ];
     };
   }

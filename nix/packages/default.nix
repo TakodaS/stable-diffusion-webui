@@ -29,6 +29,6 @@ lib.flake.forAllSystems (
   in
   builtins.listToAttrs (map folderAttrs folders)
   // {
-    default = self.packages.${system}.${package-name};
+    default = self.packages.${system}.${package-name}.static;
   }
 )

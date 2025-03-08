@@ -55,6 +55,7 @@ in
 pkgs.srcOnly {
   pname = "deps";
   version = "1.0";
+  stdenv = pkgs.stdenvNoCC;
   sourceRoot = ".";
 
   # Empty derivation, nothing to build

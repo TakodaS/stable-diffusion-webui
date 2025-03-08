@@ -60,15 +60,17 @@ in
         systemd.services.${package-name} = {
           description = "${package-name} server";
 
-          environment.DJANGO_STATIC_ROOT = cfg.static-root;
-
-          serviceConfig = {
-            ExecStart = ''${cfg.venv}/bin/daphne django_webapp.asgi:application'';
+          serviceConfig = rec {
+            ExecStart = ''
+              ${lib.getExe self.packages.${system}.${package-name}.static}
+            '';
             Restart = "on-failure";
 
             DynamicUser = true;
             StateDirectory = "${package-name}";
             RuntimeDirectory = "${package-name}";
+            RuntimeDirectoryMode = 775;
+            PermissionsStartOnly = true;
 
             BindReadOnlyPaths = [
               "${
@@ -79,6 +81,7 @@ in
               "-/etc/nsswitch.conf"
               "-/etc/hosts"
               "-/etc/localtime"
+              "${RuntimeDirectory}:${self.packages.${system}.deps}"
             ];
           };
 

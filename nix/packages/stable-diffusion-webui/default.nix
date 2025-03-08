@@ -86,7 +86,7 @@ let
           machine.wait_for_unit("${package-name}.service")
 
           with subtest("Web interface getting ready"):
-              machine.wait_until_succeeds("curl -fs localhost:8000")
+              machine.wait_until_succeeds("curl -fs localhost:7860")
         '';
       };
 
@@ -113,8 +113,21 @@ pythonSet.${package-name}.overrideAttrs (old: {
     static = import ./static args;
 
   };
+  src = lib.cleanSource old.src;
   nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.makeWrapper ];
-  installPhase =
+  # postBuild =
+  #
+  #   let
+  #     getDeps = lib.attrsets.foldlAttrs (
+  #       acc: name: value:
+  #       acc + "ln -s ${value} repositories/${name} \n"
+  #     ) "" self.packages.${system}.deps.passthru;
+  #   in
+  #   ''
+  #     mkdir repositories
+  #     ${getDeps}
+  #   '';
+  postInstall =
     let
       script = pkgs.writeShellScriptBin "${old.pname}" ''
         python ${src}/launch.py --skip-prepare-environment "$@"
