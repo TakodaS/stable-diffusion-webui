@@ -70,6 +70,7 @@ let
         nodes.machine =
           { ... }:
           {
+            virtualisation.memorySize = 6000;
             imports = [
               self.nixosModules.${package-name}
             ];

@@ -55,31 +55,39 @@ in
         };
         repositoryRoot = mkOption {
           type = types.str;
-          default = "${cfg.stateDir}/repositories";
+          default = "${cfg.stateDir}/src";
           description = "Path to the git repositories.";
         };
 
       };
       config = mkIf cfg.enable {
-        # users.users.${package-name} = {
-        #   description = "Uptimed daemon user";
-        #   home = cfg.static-root;
-        #   group = package-name;
-        #   isSystemUser = true;
-        # };
-        # users.groups.${package-name} = { };
+        environment.systemPackages = [
+          cfg.venv
+          pkgs.git
+          pkgs.cacert
+        ];
+        users.users.${package-name} = {
+          description = "${package-name}-user";
+          home = cfg.stateDir;
+          group = package-name;
+          isSystemUser = true;
+        };
+        users.groups.${package-name} = { };
         systemd.services.${package-name} = {
           description = "${package-name} server";
           after = [ "network.target" ];
           wantedBy = [ "multi-user.target" ];
-          path = [
-
-            pkgs.gitAndTools.git
+          path = with pkgs; [
+            gitAndTools.git
+            cacert
           ];
           preStart = ''
-            mkdir -p ${cfg.stateDir}
-            mkdir -p ${cfg.repositoryRoot}
-            cp -r ${self.packages.${system}.${package-name}.static}/* ${cfg.stateDir}
+            mkdir -p ${cfg.repositoryRoot}/repositories
+            mkdir -p ${cfg.stateDir}/.config/matplotlib
+            cp -r -u --no-preserve=mode ${
+              self.packages.${system}.${package-name}.static
+            }/* ${cfg.repositoryRoot}
+            chown -hR ${package-name} ${cfg.stateDir}
           '';
 
           serviceConfig = rec {
@@ -101,28 +109,28 @@ in
             #   in
             #   script;
             ExecStart = ''
-              ${cfg.venv}/bin/python ${cfg.stateDir}/launch.py --skip-prepare-environment --skip-install
+              ${cfg.venv}/bin/python ${cfg.repositoryRoot}/launch.py --skip-prepare-environment --skip-install --skip-torch-cuda-test
             '';
             Restart = "on-failure";
-            # User = package-name;
+            User = package-name;
 
-            DynamicUser = true;
+            # DynamicUser = true;
             StateDirectory = "${cfg.stateDir}";
             StateDirectoryMode = 775;
-            RuntimeDirectory = "${cfg.stateDir}";
+            RuntimeDirectory = "${cfg.repositoryRoot}";
             RuntimeDirectoryMode = 775;
             PermissionsStartOnly = true;
 
-            BindReadOnlyPaths = [
-              "${
-                config.environment.etc."ssl/certs/ca-certificates.crt".source
-              }:/etc/ssl/certs/ca-certificates.crt"
-              builtins.storeDir
-              "-/etc/resolv.conf"
-              "-/etc/nsswitch.conf"
-              "-/etc/hosts"
-              "-/etc/localtime"
-            ];
+            # BindReadOnlyPaths = [
+            #   "${
+            #     config.environment.etc."ssl/certs/ca-certificates.crt".source
+            #   }:/etc/ssl/certs/ca-certificates.crt"
+            #   builtins.storeDir
+            #   "-/etc/resolv.conf"
+            #   "-/etc/nsswitch.conf"
+            #   "-/etc/hosts"
+            #   "-/etc/localtime"
+            # ];
           };
 
         };
