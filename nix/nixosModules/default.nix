@@ -39,6 +39,14 @@ in
             Enable ${package-name}
           '';
         };
+        args = mkOption {
+          default = [
+            "--skip-prepare-environment"
+            "--xformers"
+          ];
+          type = types.listOf (types.str);
+          description = "Command line arguments to pass to launch.py";
+        };
 
         venv = mkOption {
           type = lib.types.package;
@@ -65,6 +73,7 @@ in
           cfg.venv
           pkgs.git
           pkgs.cacert
+          pkgs.rsync
         ];
         users.users.${package-name} = {
           description = "${package-name}-user";
@@ -85,31 +94,16 @@ in
           preStart = ''
             mkdir -p ${cfg.repositoryRoot}/repositories
             mkdir -p ${cfg.stateDir}/.config/matplotlib
-            cp -r -a ${self.packages.${system}.${package-name}.static}/* ${cfg.repositoryRoot}
+            ${lib.getExe pkgs.rsync} -r -a ${
+              self.packages.${system}.${package-name}.static
+            }/* ${cfg.repositoryRoot}
             chown -hR ${package-name} ${cfg.stateDir}
             chmod -R +775 ${cfg.stateDir}
           '';
 
-          serviceConfig = rec {
-            # Run the pre-start script with full permissions (the "!" prefix) so it
-            # can create the data directory if necessary.
-            # ExecStart =
-            #   let
-            #     script =
-            #       pkgs.runCommand "${package-name}-start"
-            #         {
-            #           buildInputs = with pkgs; [
-            #             cacert
-            #             git
-            #           ];
-            #         }
-            #         ''
-            #           ${cfg.venv}/bin/python ${cfg.stateDir}/launch.py --skip-prepare-environment --skip-install
-            #         '';
-            #   in
-            #   script;
+          serviceConfig = {
             ExecStart = ''
-              ${cfg.venv}/bin/python ${cfg.repositoryRoot}/launch.py --skip-prepare-environment  --skip-torch-cuda-test
+              ${cfg.venv}/bin/python ${cfg.repositoryRoot}/launch.py ${builtins.concatStringsSep " " cfg.args}
             '';
             Restart = "on-failure";
             User = package-name;

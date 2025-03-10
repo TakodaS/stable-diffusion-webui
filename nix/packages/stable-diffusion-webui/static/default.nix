@@ -31,19 +31,21 @@ pkgs.stdenv.mkDerivation rec {
         acc: name: value:
         acc + "ln -s ${value} ${repoDir}/repositories/${name} \n"
       ) "" self.packages.${system}.deps.passthru;
-      dbg = builtins.trace "dbg: ${getDeps}" getDeps;
+      # getModels = lib.attrsets.foldlAttrs (
+      #   acc: name: value:
+      #   acc + "ln -s ${value} ${repoDir}/models/${name} \n"
+      # ) "" self.packages.${system}.models.passthru;
       script = pkgs.writeShellScriptBin "${name}" ''
-          echo FOOBAR
-          ls
-          pwd
         ${venv}/bin/python launch.py --skip-prepare-environment --skip-install "$@"
       '';
     in
     ''
       mkdir -p ${repoDir}/repositories
+      mkdir -p ${repoDir}/models/Stable-diffusion
       mkdir -p $out/bin
       cp -r $src/* ${repoDir}
       ${getDeps}
+
       cp ${lib.getExe script} $out/bin
     '';
   postFixup = ''
