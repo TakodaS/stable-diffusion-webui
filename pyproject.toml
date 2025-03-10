@@ -1,7 +1,7 @@
 [project]
 name = "stable-diffusion-webui"
 version = "0.0.1"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = [
   "accelerate>=1.4.0",
   "blendmodes>=2024",

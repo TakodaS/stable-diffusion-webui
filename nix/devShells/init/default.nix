@@ -11,11 +11,11 @@ in
 pkgs.mkShell {
   packages = [
     pkgs.uv
-    pkgs.python312
+    pkgs.python310
   ];
   env = {
     UV_NO_SYNC = "1";
-    UV_PYTHON = "${venv}/bin/python";
+    UV_PYTHON = "${pkgs.python310}";
     UV_PYTHON_DOWNLOADS = "never";
   };
   shellHook = ''

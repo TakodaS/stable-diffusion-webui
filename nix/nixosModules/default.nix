@@ -80,14 +80,14 @@ in
           path = with pkgs; [
             gitAndTools.git
             cacert
+            neovim
           ];
           preStart = ''
             mkdir -p ${cfg.repositoryRoot}/repositories
             mkdir -p ${cfg.stateDir}/.config/matplotlib
-            cp -r -u --no-preserve=mode ${
-              self.packages.${system}.${package-name}.static
-            }/* ${cfg.repositoryRoot}
+            cp -r -a ${self.packages.${system}.${package-name}.static}/* ${cfg.repositoryRoot}
             chown -hR ${package-name} ${cfg.stateDir}
+            chmod -R +775 ${cfg.stateDir}
           '';
 
           serviceConfig = rec {
@@ -109,7 +109,7 @@ in
             #   in
             #   script;
             ExecStart = ''
-              ${cfg.venv}/bin/python ${cfg.repositoryRoot}/launch.py --skip-prepare-environment --skip-install --skip-torch-cuda-test
+              ${cfg.venv}/bin/python ${cfg.repositoryRoot}/launch.py --skip-prepare-environment  --skip-torch-cuda-test
             '';
             Restart = "on-failure";
             User = package-name;
