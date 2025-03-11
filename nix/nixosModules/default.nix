@@ -39,13 +39,11 @@ in
             Enable ${package-name}
           '';
         };
-        args = mkOption {
+        extraArgs = mkOption {
           default = [
-            "--skip-prepare-environment"
-            "--xformers"
           ];
           type = types.listOf (types.str);
-          description = "Command line arguments to pass to launch.py";
+          description = "Command line arguments to pass to launch.py in addition to --skip-prepare-enviroment --no-gradio-queue --xformers";
         };
 
         venv = mkOption {
@@ -103,7 +101,7 @@ in
 
           serviceConfig = {
             ExecStart = ''
-              ${cfg.venv}/bin/python ${cfg.repositoryRoot}/launch.py ${builtins.concatStringsSep " " cfg.args}
+              ${cfg.venv}/bin/python ${cfg.repositoryRoot}/launch.py --skip-prepare-environment --no-gradio-queue --xformers ${builtins.concatStringsSep " " cfg.extraArgs}
             '';
             Restart = "on-failure";
             User = package-name;
